@@ -207,7 +207,7 @@ function Set-TargetResource
 
             default
             {
-                $accounts += ConvertTo-LocalFriendlyName -Identity $PSItem -Policy $Policy -Scope 'Set'
+                $accounts += ConvertTo-UserRightSid -Identity $PSItem -Scope 'Set'
             }
         }
 
@@ -219,7 +219,7 @@ function Set-TargetResource
                 {
                     if ($id -notin $accounts)
                     {
-                        $accounts += ConvertTo-LocalFriendlyName -Identity $id -Policy $Policy -Scope 'Set'
+                        $accounts += ConvertTo-UserRightSid -Identity $id -Scope 'Set'
                     }
                 }
             }
@@ -385,7 +385,7 @@ function Test-TargetResource
 
         default
         {
-            $accounts += ConvertTo-LocalFriendlyName -Identity $PSItem -Policy $Policy
+            $accounts += ConvertTo-UserRightSid -Identity $PSItem
         }
     }
 

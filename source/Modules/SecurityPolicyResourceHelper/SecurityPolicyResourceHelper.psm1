@@ -172,9 +172,8 @@ function Get-SecurityPolicy
             $privilegeRights = $policyConfiguration.'Privilege Rights'
             foreach ($key in $privilegeRights.keys )
             {
-                $policyName = Get-UserRightConstant -Policy $key -Inverse
-                $identity = ConvertTo-LocalFriendlyName -Identity $($privilegeRights[$key] -split ",").Trim() `
-                    -Policy $policyName -Verbose:$VerbosePreference
+                $identity = ConvertTo-UserRightSid -Identity $($privilegeRights[$key] -split ",").Trim() `
+                    -Verbose:$VerbosePreference
                 $returnValue.Add( $key, $identity )
             }
 
@@ -298,6 +297,56 @@ function ConvertTo-LocalFriendlyName
     }
 
     return $friendlyNames
+}
+
+
+<#
+    .SYNOPSIS
+        Resolves username or SID to SID so desired and actual identities can be compared
+
+    .PARAMETER Identity
+        An Identity in the form of an SID (testUser1,contoso\testUser1) or SID
+#>
+function ConvertTo-UserRightSid
+{
+    [OutPutType([string])]
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
+        [System.String[]]
+        $Identity,
+
+        [Parameter()]
+        [System.String]
+        $Scope = 'Get'
+    )
+
+    $results = @()
+    foreach ($id in $Identity)
+    {
+        $id = ( $id -replace "\*" ).Trim()
+        if ($null -ne $id -and $id -match '^(S-[0-9-]{3,})')
+        {
+            # if id is a SID convert to a NTAccount
+            $sidId = [System.Security.Principal.SecurityIdentifier]$id
+            $results += "*$($sidId.Value)"
+        }
+        else
+        {
+            # if id is an friendly name convert it to a sid
+            $sidResult = ConvertTo-Sid -Identity $id -Scope $Scope -Verbose:$VerbosePreference
+
+            if ($sidResult -isnot [System.Security.Principal.SecurityIdentifier])
+            {
+                continue
+            }
+
+            $results += "*$($sidId.Value)"
+        }
+    }
+
+    return $results
 }
 
 <#
